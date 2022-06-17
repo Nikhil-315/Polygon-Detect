@@ -1,0 +1,55 @@
+import cv2
+import numpy as np
+  
+# Read image.
+frameWidth=640
+frameHeight=480
+cap=cv2.VideoCapture(0)
+cap.set(3,frameWidth)
+cap.set(4,frameHeight)
+
+def empty(a):
+    pass
+
+cv2.namedWindow("Parameters")
+cv2.resizeWindow("Parameters",640,240)
+cv2.createTrackbar("Param1","Parameters",10,255,empty)
+cv2.createTrackbar("Param2","Parameters",10,255,empty)
+cv2.createTrackbar("minRadius","Parameters",1,50,empty)
+cv2.createTrackbar("maxRadius","Parameters",50,100,empty)  
+
+while True:
+    success, img=cap.read()
+    # Convert to grayscale.
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Blur using 3 * 3 kernel.
+    gray_blurred = cv2.blur(gray, (3, 3))
+
+    P1=cv2.getTrackbarPos("Param1","Parameters")
+    P2=cv2.getTrackbarPos("Param2","Parameters")
+    min=cv2.getTrackbarPos("minRadius","Parameters")
+    max=cv2.getTrackbarPos("maxRadius","Parameters")
+    
+    # Apply Hough transform on the blurred image.
+    detected_circles = cv2.HoughCircles(gray_blurred, 
+                    cv2.HOUGH_GRADIENT, 1, 20, param1 = P1,
+                param2 = P2, minRadius = min, maxRadius = max)
+    
+    # Draw circles that are detected.
+    if detected_circles is not None:
+    
+        # Convert the circle parameters a, b and r to integers.
+        detected_circles = np.uint16(np.around(detected_circles))
+    
+        for pt in detected_circles[0, :]:
+            a, b, r = pt[0], pt[1], pt[2]
+    
+            # Draw the circumference of the circle.
+            cv2.circle(img, (a, b), r, (0, 255, 0), 2)
+    
+            # Draw a small circle (of radius 1) to show the center.
+            cv2.circle(img, (a, b), 1, (0, 0, 255), 3)
+            cv2.imshow("Detected Circle", img)
+        if cv2.waitKey(1) & 0xFF==ord('q'):
+            break
